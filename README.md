@@ -1,100 +1,91 @@
-# CosmWasm Starter Pack
+# Soulbound token contract
 
-This is a template to build smart contracts in Rust to run inside a
-[Cosmos SDK](https://github.com/cosmos/cosmos-sdk) module on all chains that enable it.
-To understand the framework better, please read the overview in the
-[cosmwasm repo](https://github.com/CosmWasm/cosmwasm/blob/master/README.md),
-and dig into the [cosmwasm docs](https://www.cosmwasm.com).
-This assumes you understand the theory and just want to get coding.
+---
 
-## Creating a new repo from template
+TL;DR
 
-Assuming you have a recent version of rust and cargo (v1.58.1+) installed
-(via [rustup](https://rustup.rs/)),
-then the following should get you a new repo to start a contract:
+Soulbound Tokens (SBTs) are digital identity tokens that represent the traits, features, and achievements that make up a person or entity. SBTs are issued by “Souls,” which represent blockchain accounts or wallets, and cannot be transferred.
 
-Install [cargo-generate](https://github.com/ashleygwilliams/cargo-generate) and cargo-run-script.
-Unless you did that before, run this line now:
+## ShareRing enable CosmWasm
+
+ShareRing is a digital identity blockchain ecosystem, with features that enable you to create and utilise your digital ID in the real world.
+CosmWasm is a smart contracting platform built for the Cosmos ecosystem. Simply put, it's the Cosmos (Cosm) way of using WebAssembly (Wasm) hence the name.
+
+### Instantiate Soulbound CosmWasm
+
+People could have multiple wallets (or Souls) representing different parts of their lives. For example, someone could have a “Credentials Soul” for their work history and a “Medical Soul” for their health records. Souls and SBTs would allow people to build a verifiable, digital Web3 reputation based on their past actions and experiences.
+
+You can instantiate multiple soulbound tokens each have different meaning
+
+- minter: is the address that can mint new soulbound token (default value is the address that instantiate contract)
+- token_uri: json file describe soulbound token, must be immutable (upload to ipfs, not some centralized server)
 
 ```sh
-cargo install cargo-generate --features vendored-openssl
-cargo install cargo-run-script
+shareledger tx wasm instantiate 1 '{"token_uri": "ipfs.io/ipfs/bafybeigtyxrp4ujy4u2juthjfc26blvu7lnxjkwcac4stahn3ixayhxwe4/9036.json"}' --from authority --label "name service 4" --no-admin -y --gas auto --gas-adjustment 1.3
 ```
 
-Now, use it to create your new contract.
-Go to the folder in which you want to place it and run:
+![instantiate soulbound cosmwasm](./images/instantiate.png "instantiate soulbound cosmwasm").
 
+### Mint new Soulbound token
 
-**Latest**
+Soulbound tokens cannot be bought and sold and are not designed to have market value. Instead, they can be issued by individuals or by another entity to symbolize an accomplishment. The owner of token can't transfer it to other.
+
+Only account with proper permission can mint new token (maybe authority or DAO, multi-sign account)
+
+![mint soulbound cosmwasm](./images/mint.png "mint soulbound cosmwasm").
+
+### Example Usage
+
+- Managing medical records
+- Storing digital ID cards or memberships
+- Certifying achievements, like job history or education
+- Verifying attendance to an event, similar to a Proof of Attendance Protocol
+- Allowing people to build verifiable, digital reputations based on past actions. This could make it easier to track a user’s decentralized finance (DeFi) borrowing history and give out loans
+- Introducing reputation-based voting for decentralized autonomous organization (DAO) governance models. This could also help DAOs mitigate Sybil attacks
+- Using social recovery to gain access to an individual’s lost private keys
+
+Binance announced that it would be issuing soulbound tokens on the BNB blockchain to all users who complete know-your-customer (KYC) requirements
+
+Cosm native module or other Cosm contract of any Cosmos blockchain can query from Soulbound contract to verify specific information of users.
 
 ```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --name PROJECT_NAME
-````
-
-For cloning minimal code repo:
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --name PROJECT_NAME -d minimal=true
+shareledger q wasm contract-state smart shareledger10nav4qmv67qe2eekzdelnxj5fazwmcyrqpzea57wr7c9fyzl00lqduq564 '{"get_soul_bound_token": {"soul":"shareledger1y9vwjgq07gakdyyy0kuj9hcghy9uyy8gpzpvsy"}}'
 ```
 
-**Older Version**
+![query soulbound cosmwasm](./images/query.png "query soulbound cosmwasm").
 
-Pass version as branch flag:
+### Soulbound contract interface
 
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --branch <version> --name PROJECT_NAME
-````
+```Rust
+pub enum ExecuteMsg {
+    Mint { to: String },
+    SetMinter { minter: String },
+}
 
-Example:
+pub enum QueryMsg {
+    #[returns(GetTokenURIResponse)]
+    GetTokenUri {},
+    #[returns(GetInfoResponse)]
+    GetInfo {},
+    #[returns(GetSoulBoundTokenResponse)]
+    GetSoulBoundToken { soul: String },
+}
 
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --branch 0.16 --name PROJECT_NAME
+#[cw_serde]
+pub struct GetTokenURIResponse {
+    pub token_uri: String,
+}
+
+#[cw_serde]
+pub struct GetInfoResponse {
+    pub minter: Addr,
+    pub token_uri: String,
+    pub owner: Addr,
+    pub token_total: Uint128,
+}
+
+#[cw_serde]
+pub struct GetSoulBoundTokenResponse {
+    pub token_id: Uint128,
+}
 ```
-
-You will now have a new folder called `PROJECT_NAME` (I hope you changed that to something else)
-containing a simple working contract and build system that you can customize.
-
-## Create a Repo
-
-After generating, you have a initialized local git repo, but no commits, and no remote.
-Go to a server (eg. github) and create a new upstream repo (called `YOUR-GIT-URL` below).
-Then run the following:
-
-```sh
-# this is needed to create a valid Cargo.lock file (see below)
-cargo check
-git branch -M main
-git add .
-git commit -m 'Initial Commit'
-git remote add origin YOUR-GIT-URL
-git push -u origin main
-```
-
-## CI Support
-
-We have template configurations for both [GitHub Actions](.github/workflows/Basic.yml)
-and [Circle CI](.circleci/config.yml) in the generated project, so you can
-get up and running with CI right away.
-
-One note is that the CI runs all `cargo` commands
-with `--locked` to ensure it uses the exact same versions as you have locally. This also means
-you must have an up-to-date `Cargo.lock` file, which is not auto-generated.
-The first time you set up the project (or after adding any dep), you should ensure the
-`Cargo.lock` file is updated, so the CI will test properly. This can be done simply by
-running `cargo check` or `cargo unit-test`.
-
-## Using your project
-
-Once you have your custom repo, you should check out [Developing](./Developing.md) to explain
-more on how to run tests and develop code. Or go through the
-[online tutorial](https://docs.cosmwasm.com/) to get a better feel
-of how to develop.
-
-[Publishing](./Publishing.md) contains useful information on how to publish your contract
-to the world, once you are ready to deploy it on a running blockchain. And
-[Importing](./Importing.md) contains information about pulling in other contracts or crates
-that have been published.
-
-Please replace this README file with information about your specific project. You can keep
-the `Developing.md` and `Publishing.md` files as useful referenced, but please set some
-proper description in the README.

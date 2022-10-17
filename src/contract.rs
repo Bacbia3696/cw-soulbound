@@ -7,7 +7,7 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{MINTER, TOKEN_SEQ};
+use crate::state::{MINTER, TOKEN_SEQ, TOKEN_URI, OWNER};
 use crate::{execute, query};
 
 // version info for migration info
@@ -36,6 +36,8 @@ pub fn instantiate(
     MINTER.save(store, &minter)?;
     set_contract_version(store, CONTRACT_NAME, CONTRACT_VERSION)?;
     TOKEN_SEQ.save(store, &Uint128::new(0))?;
+    TOKEN_URI.save(store, &msg.token_uri)?;
+    OWNER.save(store, &info.sender)?;
 
     let resp = Response::new()
         .add_attribute("method", "instantiate")
@@ -62,8 +64,9 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetTokenURI {} => to_binary(&query::get_token_uri(deps)?),
+        QueryMsg::GetTokenUri {} => to_binary(&query::get_token_uri(deps)?),
         QueryMsg::GetInfo {} => to_binary(&query::get_info(deps)?),
+        QueryMsg::GetSoulBoundToken { soul } => to_binary(&query::get_soulbound(deps, soul)?),
     }
 }
 

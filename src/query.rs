@@ -1,8 +1,8 @@
 use cosmwasm_std::{Deps, StdResult};
 
 use crate::{
-    msg::{GetInfoResponse, GetTokenURIResponse},
-    state::{MINTER, OWNER, TOKEN_SEQ, TOKEN_URI},
+    msg::{GetInfoResponse, GetSoulBoundTokenResponse, GetTokenURIResponse},
+    state::{MINTER, OWNER, SOULBOUND, TOKEN_SEQ, TOKEN_URI},
 };
 
 pub fn get_token_uri(deps: Deps) -> StdResult<GetTokenURIResponse> {
@@ -21,4 +21,10 @@ pub fn get_info(deps: Deps) -> StdResult<GetInfoResponse> {
         token_uri,
         token_total,
     })
+}
+
+pub fn get_soulbound(deps: Deps, soul: String) -> StdResult<GetSoulBoundTokenResponse> {
+    let soul = deps.api.addr_validate(&soul)?;
+    let token_id = SOULBOUND.load(deps.storage, soul)?;
+    Ok(GetSoulBoundTokenResponse { token_id })
 }

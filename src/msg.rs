@@ -17,15 +17,11 @@ pub enum ExecuteMsg {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(GetTokenURIResponse)]
-    GetTokenURI {},
+    GetTokenUri {},
     #[returns(GetInfoResponse)]
     GetInfo {},
-}
-
-// We define a custom struct for each query response
-#[cw_serde]
-pub struct GetCountResponse {
-    pub count: i32,
+    #[returns(GetSoulBoundTokenResponse)]
+    GetSoulBoundToken { soul: String },
 }
 
 #[cw_serde]
@@ -39,4 +35,9 @@ pub struct GetInfoResponse {
     pub token_uri: String,
     pub owner: Addr,
     pub token_total: Uint128,
+}
+
+#[cw_serde]
+pub struct GetSoulBoundTokenResponse {
+    pub token_id: Uint128,
 }
